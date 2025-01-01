@@ -7,7 +7,7 @@ import {
   Volume2,
   ArrowLeftRight,
 } from "lucide-react";
-import { Card } from "../components/ui/Card";
+import { Card } from "../components/ui/card2";
 import { FloatingParticles } from "../components/ui/FloatingParticles";
 import { speakText, LANGUAGE_TO_SPEECH_CODE } from "../utils/speech";
 import { TranslationDetails } from "../components/ui/TranslationDetails";
