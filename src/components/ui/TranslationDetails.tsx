@@ -1,5 +1,12 @@
-import { Card } from "./Card";
-import { Volume2, Plus, BookOpen, AlertCircle, Sparkles, Globe2 } from "lucide-react";
+import { Card } from "./card2";
+import {
+  Volume2,
+  Plus,
+  BookOpen,
+  AlertCircle,
+  Sparkles,
+  Globe2,
+} from "lucide-react";
 import { motion } from "framer-motion";
 import { TranslationResponse } from "../../types/translation";
 
@@ -14,7 +21,7 @@ interface TranslationDetailsProps {
 export function TranslationDetails({
   details,
   targetLang,
-  onGenerateMoreExamples
+  onGenerateMoreExamples,
 }: TranslationDetailsProps) {
   const handleSpeak = async (text: string) => {
     try {
@@ -49,14 +56,18 @@ export function TranslationDetails({
             </h3>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <div className="bg-gray-700/30 rounded-lg p-4">
-                <h4 className="text-lg font-medium text-white mb-3">Sentence Structure</h4>
+                <h4 className="text-lg font-medium text-white mb-3">
+                  Sentence Structure
+                </h4>
                 <p className="text-gray-300">{details.grammar.structure}</p>
                 <div className="mt-4">
-                  <h5 className="text-sm font-medium text-gray-400 mb-2">Tense & Mood</h5>
+                  <h5 className="text-sm font-medium text-gray-400 mb-2">
+                    Tense & Mood
+                  </h5>
                   <p className="text-gray-300">{details.grammar.tense_mood}</p>
                 </div>
               </div>
-              
+
               <div className="bg-gray-700/30 rounded-lg p-4">
                 <h4 className="flex items-center gap-2 text-lg font-medium text-white mb-3">
                   <AlertCircle className="w-4 h-4 text-yellow-400" />
@@ -64,7 +75,10 @@ export function TranslationDetails({
                 </h4>
                 <ul className="space-y-2">
                   {details.grammar.common_mistakes.map((mistake, i) => (
-                    <li key={i} className="text-gray-300 flex items-start gap-2">
+                    <li
+                      key={i}
+                      className="text-gray-300 flex items-start gap-2"
+                    >
                       <span className="text-yellow-400">⚠</span>
                       {mistake}
                     </li>
@@ -102,8 +116,12 @@ export function TranslationDetails({
                 </div>
               </div>
               <div>
-                <h4 className="text-lg font-medium text-white mb-3">Regional Variations</h4>
-                <p className="text-gray-300">{details.cultural_context.regional_variations}</p>
+                <h4 className="text-lg font-medium text-white mb-3">
+                  Regional Variations
+                </h4>
+                <p className="text-gray-300">
+                  {details.cultural_context.regional_variations}
+                </p>
               </div>
             </div>
           </div>
@@ -113,7 +131,9 @@ export function TranslationDetails({
             {/* Examples Section - With Generate More Button */}
             <div className="col-span-full">
               <div className="flex justify-between items-center mb-4">
-                <h3 className="text-xl font-medium text-blue-400">Example Usage</h3>
+                <h3 className="text-xl font-medium text-blue-400">
+                  Example Usage
+                </h3>
                 <button
                   onClick={onGenerateMoreExamples}
                   className="flex items-center gap-2 px-4 py-2 bg-blue-600/20 hover:bg-blue-600/30 rounded-lg transition-colors"
@@ -246,16 +266,28 @@ export function TranslationDetails({
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="bg-gray-700/30 rounded-lg p-4">
-                <h4 className="text-lg font-medium text-white mb-3">Usage Context</h4>
-                <p className="text-gray-300">{details.cultural_context.usage}</p>
+                <h4 className="text-lg font-medium text-white mb-3">
+                  Usage Context
+                </h4>
+                <p className="text-gray-300">
+                  {details.cultural_context.usage}
+                </p>
                 <div className="mt-4">
-                  <h5 className="text-sm font-medium text-gray-400 mb-2">Formality Level</h5>
-                  <p className="text-gray-300">{details.cultural_context.formality}</p>
+                  <h5 className="text-sm font-medium text-gray-400 mb-2">
+                    Formality Level
+                  </h5>
+                  <p className="text-gray-300">
+                    {details.cultural_context.formality}
+                  </p>
                 </div>
               </div>
               <div className="bg-gray-700/30 rounded-lg p-4">
-                <h4 className="text-lg font-medium text-white mb-3">Cultural Notes</h4>
-                <p className="text-gray-300">{details.cultural_context.cultural_notes}</p>
+                <h4 className="text-lg font-medium text-white mb-3">
+                  Cultural Notes
+                </h4>
+                <p className="text-gray-300">
+                  {details.cultural_context.cultural_notes}
+                </p>
               </div>
             </div>
           </div>
@@ -270,22 +302,34 @@ export function TranslationDetails({
                 href="#"
                 className="block p-4 bg-gray-800/30 rounded-lg hover:bg-gray-800/50 transition-colors"
               >
-                <h4 className="text-lg font-medium text-white mb-2">Grammar Guide</h4>
-                <p className="text-gray-400 text-sm">Detailed explanations of the grammar points used</p>
+                <h4 className="text-lg font-medium text-white mb-2">
+                  Grammar Guide
+                </h4>
+                <p className="text-gray-400 text-sm">
+                  Detailed explanations of the grammar points used
+                </p>
               </a>
               <a
                 href="#"
                 className="block p-4 bg-gray-800/30 rounded-lg hover:bg-gray-800/50 transition-colors"
               >
-                <h4 className="text-lg font-medium text-white mb-2">Practice Exercises</h4>
-                <p className="text-gray-400 text-sm">Interactive exercises to master this content</p>
+                <h4 className="text-lg font-medium text-white mb-2">
+                  Practice Exercises
+                </h4>
+                <p className="text-gray-400 text-sm">
+                  Interactive exercises to master this content
+                </p>
               </a>
               <a
                 href="#"
                 className="block p-4 bg-gray-800/30 rounded-lg hover:bg-gray-800/50 transition-colors"
               >
-                <h4 className="text-lg font-medium text-white mb-2">Cultural Deep Dive</h4>
-                <p className="text-gray-400 text-sm">Learn more about the cultural context</p>
+                <h4 className="text-lg font-medium text-white mb-2">
+                  Cultural Deep Dive
+                </h4>
+                <p className="text-gray-400 text-sm">
+                  Learn more about the cultural context
+                </p>
               </a>
             </div>
           </div>
