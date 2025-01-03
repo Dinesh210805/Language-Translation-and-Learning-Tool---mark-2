@@ -22,3 +22,4 @@ if __name__ == "__main__":
     root_dir = os.getcwd()  # Get the current working directory
     print(f"Directory tree for: {root_dir}\n")
     display_tree(root_dir)
+ 

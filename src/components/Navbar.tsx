@@ -17,7 +17,7 @@ function Navbar() {
         <div className="flex items-center justify-between h-16">
           <Link to="/" className="flex items-center space-x-2">
             <Globe2 className="w-8 h-8 text-blue-600" />
-            <span className="text-xl font-bold">LangLearn</span>
+            <span className="text-xl text-white font-bold">LangLearn</span>
           </Link>
 
           <div className="hidden md:flex space-x-8">

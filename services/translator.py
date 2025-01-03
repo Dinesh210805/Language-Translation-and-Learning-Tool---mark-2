@@ -2,8 +2,10 @@ import json
 import requests
 import logging
 import time
+import base64
 from typing import Dict
 from langdetect import detect, LangDetectException
+from .speech_service import SpeechService
 
 logger = logging.getLogger(__name__)
 
@@ -230,3 +232,33 @@ class GroqTranslator:
                 raise
 
         raise Exception("Translation failed after maximum retries")
+
+    def translate_voice(self, audio_data: bytes, source_lang: str, target_lang: str) -> Dict:
+        """Translate voice input to voice output."""
+        try:
+            speech_service = SpeechService(self.api_key)
+            
+            if target_lang == "en":
+                # Use direct audio to English translation
+                result = speech_service.translate_audio(audio_data)
+                translated_text = result['text']
+            else:
+                # First transcribe, then translate
+                transcription = speech_service.transcribe_audio(audio_data, source_lang)
+                translation = self.translate_with_context(
+                    transcription['text'],
+                    source_lang,
+                    target_lang
+                )
+                translated_text = translation['translation']
+
+            return {
+                'translation': translated_text,
+                'original_text': transcription['text'] if 'transcription' in locals() else result['text'],
+                'source_lang': source_lang,
+                'target_lang': target_lang
+            }
+
+        except Exception as e:
+            logger.error(f"Voice translation error: {str(e)}")
+            raise
