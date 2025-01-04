@@ -164,55 +164,91 @@ def get_history():
 @app.route('/api/youtube/captions', methods=['GET'])
 def get_youtube_captions():
     video_id = request.args.get('videoId')
-    target_language = request.args.get('language', 'es')  # Default to Spanish
-    return_original = request.args.get('original', 'true')  # New parameter
+    target_language = request.args.get('language', '').lower()
     
-    if not video_id:
-        return jsonify({'error': 'Missing videoId parameter'}), 400
+    if not video_id or not target_language:
+        return jsonify({'error': 'Missing required parameters'}), 400
 
     try:
-        # Get Spanish auto-generated captions
+        # Get transcript list
+        transcript_list = YouTubeTranscriptApi.list_transcripts(video_id)
+        
+        # Language code mapping
+        lang_map = {
+            'spanish': ['es', 'es-419', 'es-ES', 'es-MX', 'es-US'],
+            'french': ['fr', 'fr-FR', 'fr-CA'],
+            'german': ['de', 'de-DE']
+        }
+
+        target_codes = lang_map.get(target_language, [target_language])
+        
+        # Try to get transcript in target language
         transcript = None
-        try:
-            transcript = YouTubeTranscriptApi.get_transcript(
-                video_id, 
-                languages=['es']
-            )
-        except:
-            try:
-                transcript_list = YouTubeTranscriptApi.list_transcripts(video_id)
-                transcript = transcript_list.find_transcript(['es']).fetch()
-            except Exception as e:
-                logger.error(f"Could not find Spanish captions: {str(e)}")
-                return jsonify({'error': 'No Spanish captions available'}), 404
+        orig_language = None
 
-        # Store original Spanish captions
-        original_captions = ' '.join([entry['text'] for entry in transcript])
-
-        # If target language is different and original not requested, translate
-        translated_captions = original_captions
-        if target_language != 'es' and return_original != 'true':
+        # First try regular transcripts
+        for lang_code in target_codes:
             try:
-                transcript_list = YouTubeTranscriptApi.list_transcripts(video_id)
-                translated = transcript_list.find_transcript(['es']).translate(target_language).fetch()
-                translated_captions = ' '.join([entry['text'] for entry in translated])
+                transcript = transcript_list.find_transcript([lang_code])
+                orig_language = lang_code
+                logger.info(f"Found transcript in {lang_code}")
+                break
+            except:
+                continue
+
+        # If not found, try auto-generated
+        if not transcript:
+            try:
+                for lang_code in target_codes:
+                    for t in transcript_list._generated_transcripts:
+                        if t._language_code == lang_code:
+                            transcript = t
+                            orig_language = lang_code
+                            logger.info(f"Found auto-generated transcript in {lang_code}")
+                            break
+                    if transcript:
+                        break
+            except:
+                pass
+
+        # If still not found, try to translate from any available transcript
+        if not transcript:
+            try:
+                # Get first available transcript
+                transcript = next(iter(transcript_list._manually_created_transcripts.values()))
+                orig_language = transcript._language_code
+                # Translate to target language
+                transcript = transcript.translate(target_codes[0])
+                logger.info(f"Translated from {orig_language} to {target_codes[0]}")
             except Exception as e:
-                logger.error(f"Translation failed: {str(e)}")
-                # Fall back to original if translation fails
-                
+                logger.warning(f"Translation attempt failed: {str(e)}")
+
+        if not transcript:
+            return jsonify({
+                'error': 'No captions available',
+                'details': f'Could not find or translate captions for {target_language}'
+            }), 404
+
+        # Get transcript text
+        captions_text = ' '.join([entry['text'] for entry in transcript.fetch()])
+
         return jsonify({
             'captions': {
-                'original': original_captions,
-                'translated': translated_captions if target_language != 'es' else original_captions
+                'original': captions_text,
+                'translated': captions_text
             },
             'language': {
-                'original': 'es',
-                'translated': target_language
+                'original': orig_language or target_codes[0],
+                'translated': target_codes[0]
             }
         })
+
     except Exception as e:
-        logger.exception(f"Failed to fetch captions: {str(e)}")
-        return jsonify({'error': 'Could not retrieve captions'}), 500
+        logger.exception(f"Caption fetch error: {str(e)}")
+        return jsonify({
+            'error': 'Failed to fetch captions',
+            'details': str(e)
+        }), 500
 
 @app.route('/api/generate-summary', methods=['POST'])
 def generate_summary():
@@ -235,47 +271,58 @@ def generate_course_summary():
     try:
         data = request.get_json()
         captions = data.get('captions')
-        language = data.get('language')
+        language = data.get('language', '').lower()
 
-        if not captions or not language:
-            return jsonify({'error': 'Missing required parameters'}), 400
+        if not captions:
+            return jsonify({'error': 'Missing captions'}), 400
 
-            # Process captions with Groq LLM
         headers = {
             "Authorization": f"Bearer {GROQ_API_KEY}",
             "Content-Type": "application/json"
         }
 
-        structured_prompt = f"""You are a language learning expert. Analyze these {language} captions and create a detailed educational summary:
+        # Language-specific prompts
+        language_prompts = {
+            'spanish': "Analyze these Spanish language captions for key Spanish learning concepts",
+            'french': "Analyze these French language captions for key French learning concepts",
+            'german': "Analyze these German language captions for key German learning concepts",
+            'default': f"Analyze these {language} language captions for key language learning concepts"
+        }
 
-{captions}
+        base_prompt = language_prompts.get(language, language_prompts['default'])
+        
+        structured_prompt = f"""{base_prompt}
 
-Create a comprehensive analysis that includes:
+        Text to analyze: {captions}
 
-1. Main learning points (list at least 5 key takeaways)
-2. Vocabulary breakdown (include words with their translations and example usage)
-3. Grammar concepts explained
-4. Cultural context and insights
-5. Practical exercises for learners
+        Create a comprehensive language learning analysis that includes:
+        1. Key vocabulary with translations and example usage
+        2. Grammar patterns and rules demonstrated
+        3. Cultural context and insights
+        4. Practice exercises and dialogues
+        5. Important phrases and expressions
+        6. Timeline of topics covered
 
-Format the response as JSON with this exact structure:
-{{
-    "mainPoints": ["point1", "point2", ...],
-    "keyVocabulary": [
-        {{"word": "term1", "meaning": "translation1"}},
-        {{"word": "term2", "meaning": "translation2"}}
-    ],
-    "conceptBreakdown": [
-        {{"concept": "Grammar Rule 1", "explanation": "Detailed explanation"}},
-        {{"concept": "Usage Pattern", "explanation": "How and when to use it"}}
-    ],
-    "culturalInsights": ["insight1", "insight2", ...],
-    "practiceExercises": [
-        {{"type": "Exercise Type 1", "description": "Exercise instructions"}},
-        {{"type": "Exercise Type 2", "description": "Exercise instructions"}}
-    ]
-}}
-Make sure to include practical examples and clear explanations."""
+        Format as JSON with:
+        {{
+            "mainPoints": ["5-7 key learning points"],
+            "keyVocabulary": [
+                {{"word": "original word", "meaning": "translation and usage notes"}}
+            ],
+            "conceptBreakdown": [
+                {{"concept": "grammar or usage pattern", "explanation": "detailed explanation with examples"}}
+            ],
+            "culturalInsights": ["3-5 cultural insights"],
+            "practiceExercises": [
+                {{
+                    "type": "dialogue/exercise type",
+                    "description": "complete exercise with examples and translations"
+                }}
+            ],
+            "timeline": [
+                {{"time": "MM:SS", "topic": "topic description"}}
+            ]
+        }}"""
 
         response = requests.post(
             "https://api.groq.com/openai/v1/chat/completions",
@@ -283,7 +330,7 @@ Make sure to include practical examples and clear explanations."""
             json={
                 "model": "llama-3.3-70b-versatile",
                 "messages": [
-                    {"role": "system", "content": "You are a professional language teacher creating detailed lesson summaries."},
+                    {"role": "system", "content": "You are an expert language teacher creating detailed lesson summaries with timelines and practice materials."},
                     {"role": "user", "content": structured_prompt}
                 ],
                 "temperature": 0.3,
@@ -299,16 +346,16 @@ Make sure to include practical examples and clear explanations."""
         result = response.json()
         content = json.loads(result['choices'][0]['message']['content'])
 
-        # Ensure all required fields are present with defaults if missing
+        # Enhanced response structure with timeline and practice materials
         formatted_response = {
             "summary": {
-                "mainPoints": content.get("mainPoints", ["Main points will be generated based on the content"]),
-                "keyVocabulary": content.get("keyVocabulary", [{"word": "Loading...", "meaning": "Generating vocabulary"}]),
-                "conceptBreakdown": content.get("conceptBreakdown", [{"concept": "Loading...", "explanation": "Analyzing grammar concepts"}]),
-                "culturalInsights": content.get("culturalInsights", ["Analyzing cultural context..."]),
-                "practiceExercises": content.get("practiceExercises", [{"type": "Practice", "description": "Generating exercises..."}])
+                "mainPoints": content.get("mainPoints", []),
+                "keyVocabulary": content.get("keyVocabulary", []),
+                "conceptBreakdown": content.get("conceptBreakdown", []),
+                "culturalInsights": content.get("culturalInsights", []),
+                "practiceExercises": content.get("practiceExercises", [])
             },
-            "timestamps": [{"time": "00:00", "topic": "Lesson Start"}]
+            "timestamps": content.get("timeline", [{"time": "0:00", "topic": "Start of lesson"}])
         }
 
         return jsonify(formatted_response)

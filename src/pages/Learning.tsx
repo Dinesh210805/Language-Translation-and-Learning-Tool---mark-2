@@ -27,11 +27,15 @@ export function Learning() {
     practiceExercises: Array<{ type: string; description: string }>;
   } | null>(null);
 
+  const availableLanguages = Object.keys(LESSONS_DATA);
+
   const handleSelectLesson = async (lesson: Lesson) => {
     setIsLoading(true);
     setError("");
     setCaptions("");
     setSummary("");
+    setCourseSummary(null); // Reset course summary when switching lessons
+    setCourseTimestamps([]); // Reset timestamps
 
     try {
       const response = await fetch(`${API_URL}/api/learning/lesson`, {
@@ -61,12 +65,16 @@ export function Learning() {
 
       if (lesson.video_id) {
         const captions = await fetchCaptions(lesson.video_id);
-        setCaptions(captions);
-        const summary = await generateSummaryFromCaptions(
-          captions,
-          selectedLanguage
-        );
-        setSummary(summary);
+        if (captions.includes("Captions not available")) {
+          setCaptions(captions);
+        } else {
+          setCaptions(captions);
+          const summary = await generateSummaryFromCaptions(
+            captions,
+            selectedLanguage
+          );
+          setSummary(summary);
+        }
       }
     } catch (error) {
       console.error("Error loading lesson:", error);
@@ -81,26 +89,39 @@ export function Learning() {
 
   const fetchCaptions = async (videoId: string): Promise<string> => {
     try {
+      setIsLoading(true);
       const response = await fetch(
         `${API_URL}/api/youtube/captions?videoId=${videoId}&language=${selectedLanguage.toLowerCase()}`
       );
-      if (!response.ok) {
-        throw new Error("Failed to fetch captions");
-      }
+
       const data = await response.json();
 
-      // Show both original and translated captions if available
-      const originalCaptions = data.captions.original;
-      const translatedCaptions = data.captions.translated;
-
-      if (selectedLanguage.toLowerCase() === "spanish") {
-        return originalCaptions;
+      if (!response.ok || data.error) {
+        throw new Error(
+          data.error || data.details || "Failed to fetch captions"
+        );
       }
 
-      return `Original (Spanish):\n${originalCaptions}\n\nTranslated (${selectedLanguage}):\n${translatedCaptions}`;
+      // Ensure we have captions data
+      if (!data.captions?.original && !data.captions?.translated) {
+        throw new Error(`No captions available for ${selectedLanguage}`);
+      }
+
+      const translatedLang =
+        data.language?.translated?.toUpperCase() ||
+        selectedLanguage.toUpperCase();
+      const originalText = data.captions.original || "";
+      const translatedText = data.captions.translated || "";
+
+      // Return single language version
+      return `${translatedLang}:\n${translatedText || originalText}`;
     } catch (error) {
       console.error("Error fetching captions:", error);
-      return "Captions not available. Note: This video has auto-generated Spanish captions that can be translated to other languages.";
+      return `Captions not available in ${selectedLanguage}. ${
+        error instanceof Error ? error.message : ""
+      }`;
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -133,11 +154,11 @@ export function Learning() {
       setError("");
       setIsLoading(true);
 
-      // Clean up captions before sending
+      // Clean and prepare captions
       const cleanedCaptions = captions
-        .replace(/\n{3,}/g, "\n\n") // Remove excessive newlines
+        .replace(/\n{3,}/g, "\n\n")
         .trim()
-        .substring(0, 8000); // Ensure we don't exceed token limits
+        .substring(0, 8000);
 
       const response = await fetch(`${API_URL}/api/learning/course-summary`, {
         method: "POST",
@@ -146,25 +167,28 @@ export function Learning() {
         },
         body: JSON.stringify({
           captions: cleanedCaptions,
-          language: selectedLanguage,
+          language: selectedLanguage.toLowerCase(),
         }),
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to generate summary");
-      }
-
       const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data.error || data.details || "Failed to generate summary"
+        );
+      }
 
       if (!data.summary) {
         throw new Error("Invalid summary format received");
       }
 
       setCourseSummary(data.summary);
-      setCourseTimestamps(data.timestamps || []);
+      if (data.timestamps && data.timestamps.length > 0) {
+        setCourseTimestamps(data.timestamps);
+      }
 
-      // Scroll to the summary section
+      // Scroll to summary
       document
         .getElementById("course-summary")
         ?.scrollIntoView({ behavior: "smooth" });
@@ -250,11 +274,11 @@ export function Learning() {
             </div>
           )}
 
-          {/* Practice Exercises Section */}
+          {/* Enhanced Practice Exercises Section */}
           {courseSummary.practiceExercises && (
             <div className="mb-6">
               <h4 className="text-lg font-semibold text-blue-400 mb-2">
-                Practice Exercises
+                Practice Activities
               </h4>
               <div className="space-y-4">
                 {courseSummary.practiceExercises.map((exercise, idx) => (
@@ -262,26 +286,36 @@ export function Learning() {
                     <h5 className="font-medium text-blue-300 mb-2">
                       {exercise.type}
                     </h5>
-                    <p className="text-gray-300">{exercise.description}</p>
+                    <div className="text-gray-300 whitespace-pre-line">
+                      {exercise.description}
+                    </div>
                   </div>
                 ))}
               </div>
             </div>
           )}
 
-          {/* Course Timestamps */}
-          {courseTimestamps.length > 0 && (
+          {/* Enhanced Timeline Section */}
+          {courseTimestamps && courseTimestamps.length > 0 && (
             <div className="mb-6">
               <h4 className="text-lg font-semibold text-blue-400 mb-2">
-                Course Timeline
+                Video Timeline
               </h4>
               <div className="space-y-2">
-                {courseTimestamps.map((timestamp, idx) => (
-                  <div key={idx} className="bg-white/5 p-2 rounded-lg">
-                    <span className="text-blue-300">{timestamp.time}</span>
-                    <span className="text-gray-300 ml-2">
-                      - {timestamp.topic}
+                {courseTimestamps.map((stamp, idx) => (
+                  <div
+                    key={idx}
+                    className="flex items-center space-x-3 bg-white/5 p-3 rounded-lg hover:bg-white/10 transition-colors cursor-pointer"
+                    onClick={() => {
+                      // TODO: Add timestamp navigation functionality
+                      console.log(`Navigate to ${stamp.time}`);
+                    }}
+                  >
+                    <span className="text-blue-300 font-mono min-w-[60px]">
+                      {stamp.time}
                     </span>
+                    <span className="text-gray-300">→</span>
+                    <span className="text-gray-200 flex-1">{stamp.topic}</span>
                   </div>
                 ))}
               </div>
@@ -522,6 +556,17 @@ export function Learning() {
     alert(`You scored ${score} out of ${quiz.length}`);
   };
 
+  const handleLanguageChange = (newLanguage: string) => {
+    setSelectedLanguage(newLanguage);
+    setCurrentLesson(null);
+    setLessonContent(null);
+    setCaptions("");
+    setSummary("");
+    setCourseSummary(null);
+    setCourseTimestamps([]);
+    setError("");
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -530,15 +575,17 @@ export function Learning() {
     >
       <div className="flex items-center gap-3 mb-8">
         <BookOpen className="w-8 h-8 text-blue-600" />
-        <h1 className="text-3xl font-bold">Interactive Lessons</h1>
+        <h1 className="text-3xl text-white font-bold">Interactive Lessons</h1>
         <select
           value={selectedLanguage}
-          onChange={(e) => setSelectedLanguage(e.target.value)}
+          onChange={(e) => handleLanguageChange(e.target.value)}
           className="ml-auto p-2 border rounded"
         >
-          <option value="Spanish">Spanish</option>
-          <option value="French">French</option>
-          <option value="German">German</option>
+          {availableLanguages.map((lang) => (
+            <option key={lang} value={lang}>
+              {lang}
+            </option>
+          ))}
         </select>
       </div>
 
