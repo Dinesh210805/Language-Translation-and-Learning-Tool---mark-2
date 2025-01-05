@@ -1,42 +1,152 @@
-# Language Learning Platform
+# AI-Powered Language Learning Platform
 
-A modern web application for language learning with features including text translation, voice translation, interactive lessons, practice exercises, an AI chatbot, and gamification elements.
+An advanced language learning platform that combines AI technology with interactive learning features to provide a comprehensive language learning experience.
 
-## Features
+## 🌟 Key Features
 
-- Text-to-Text Language Translation
-- Voice-to-Voice Language Translation
-- Interactive Language Learning Lessons
-- Practice Exercises and Quizzes
-- AI Language Learning Chatbot
-- Achievement System
-- Learning History Tracking
+### 1. Translation Services
 
-## Tech Stack
+- Advanced Text Translation with context and cultural notes
+- Voice-to-Voice Translation
+- Real-time language detection
+- Cultural context and usage explanations
+- Grammar breakdown and analysis
+- Example generation with contextual usage
+- Support for 30+ languages
 
-- Frontend: React + TypeScript + Tailwind CSS
-- Backend: Flask
-- Additional Libraries: Framer Motion for animations
+### 2. AI Language Tutor Chatbot
 
-## Getting Started
+- Interactive conversations in target language
+- Real-time grammar corrections
+- Contextual learning
+- Adaptive difficulty levels
+- Multiple teaching styles (casual/formal)
+- Type-writer style responses
+- Quick response suggestions
+- Voice interaction support
+- Progress tracking
 
-1. Clone the repository
-2. Install dependencies:
+### 3. Practice & Exercises
+
+- Vocabulary matching games
+- Sentence building exercises
+- Listening comprehension challenges
+- Pronunciation practice
+- Word puzzles
+- Conversation simulations
+- Memory card games
+- Fill-in-the-blanks exercises
+- Progressive difficulty levels
+
+### 4. Learning Resources
+
+- Interactive lessons
+- Grammar explanations
+- Vocabulary lists
+- Cultural
+  insights
+- Common phrases
+- Pronunciation guides
+- Usage examples
+- Practice dialogues
+
+### 5. YouTube Integration
+
+- Caption extraction
+- Translation of captions
+- Learning material generation
+- Course summaries
+- Timeline-based learning
+- Multi-language support
+
+### 6. Advanced Features
+
+- Achievement system
+- Learning history tracking
+- Progress analytics
+- Custom exercise generation
+- Performance metrics
+- Difficulty adaptation
+- Personal learning paths
+
+## 🛠 Technology Stack
+
+### Frontend
+
+- React 18+
+- TypeScript
+- Tailwind CSS
+- Framer Motion
+- Lucide Icons
+- Markdown Support
+- Speech Recognition/Synthesis
+
+### Backend
+
+- Python/Flask
+- Groq LLM Integration
+- YouTube API Integration
+- Speech Processing
+- Custom NLP Services
+
+### AI/ML Features
+
+- LLaMA 3.3 70B Model
+- Language Detection
+- Speech Recognition
+- Text-to-Speech
+- Context-Aware Responses
+- Exercise Generation
+
+## 🚀 Getting Started
+
+### Prerequisites
+
+- Node.js 16+
+- Python 3.8+
+- Groq API Key
+
+### Installation
+
+1. Clone the repository:
+
+```bash
+git clone <repository-url>
+```
+
+2. Ensure you have Python 3.8+ installed, plus Node.js 16+ for frontend tasks.
+3. Install Python dependencies:
    ```bash
-   # Frontend
-   npm install
-
-   # Backend
    pip install -r requirements.txt
    ```
-3. Start the development servers:
+4. Install frontend dependencies:
    ```bash
-   # Frontend
-   npm run dev:frontend
-
-   # Backend
-   python app.py
+   cd project
+   npm install
    ```
+
+## Environment Variables
+
+Create or edit your `.env` file to include:
+
+````
+GROQ_API_KEY=<your-groq-api-key>
+
+## Running the Project
+1. Start the backend:
+   ```bash
+   python app.py
+````
+
+2. Start the frontend (in a separate terminal):
+   ```bash
+   cd project
+   ```
+3. Open the provided localhost URL in your browser.
+
+## Model Selection
+
+The Chatbot page now includes a dropdown to pick an AI model. Select from the available models before sending messages for custom responses.
 
 ## Project Structure
 
@@ -49,6 +159,7 @@ A modern web application for language learning with features including text tran
 │   ├── components/
 │   ├── pages/
 │   └── utils/
+
 ├── package.json
 ├── requirements.txt
 └── README.md
@@ -65,3 +176,7 @@ A modern web application for language learning with features including text tran
 ## License
 
 MIT
+
+```
+
+```

@@ -2,8 +2,10 @@ import json
 import requests
 import logging
 import time
+import base64
 from typing import Dict
 from langdetect import detect, LangDetectException
+from .speech_service import SpeechService
 
 logger = logging.getLogger(__name__)
 
@@ -14,11 +16,40 @@ LANGUAGES = {
     "German": "de",
     "Italian": "it",
     "Portuguese": "pt",
-    "Chinese": "zh",
+    "Chinese (Simplified)": "zh",
+    "Chinese (Traditional)": "zh-TW",
     "Japanese": "ja",
     "Korean": "ko",
     "Russian": "ru",
-    "Tamil": "ta"
+    "Arabic": "ar",
+    "Hindi": "hi",
+    "Bengali": "bn",
+    "Turkish": "tr",
+    "Vietnamese": "vi",
+    "Thai": "th",
+    "Dutch": "nl",
+    "Greek": "el",
+    "Polish": "pl",
+    "Tamil": "ta",
+    "Telugu": "te",
+    "Gujarati": "gu",
+    "Kannada": "kn",
+    "Malayalam": "ml",
+    "Marathi": "mr",
+    "Punjabi": "pa",
+    "Urdu": "ur",
+    "Indonesian": "id",
+    "Malay": "ms",
+    "Filipino": "fil",
+    "Swedish": "sv",
+    "Danish": "da",
+    "Norwegian": "no",
+    "Finnish": "fi",
+    "Czech": "cs",
+    "Romanian": "ro",
+    "Hungarian": "hu",
+    "Ukrainian": "uk",
+    "Hebrew": "he"
 }
 
 class GroqTranslator:
@@ -230,3 +261,39 @@ class GroqTranslator:
                 raise
 
         raise Exception("Translation failed after maximum retries")
+
+    def translate_voice(self, audio_data: bytes, source_lang: str, target_lang: str) -> Dict:
+        """Translate voice input to voice output with proper error handling."""
+        try:
+            speech_service = SpeechService(self.api_key)
+            
+            # First transcribe the audio
+            transcription = speech_service.transcribe_audio(audio_data, source_lang)
+            if not transcription or 'text' not in transcription:
+                raise ValueError("Failed to transcribe audio")
+
+            # Then translate the text
+            translation = self.translate_with_context(
+                transcription['text'],
+                source_lang,
+                target_lang
+            )
+
+            # Ensure valid base64 encoding for audio response
+            try:
+                import base64
+                audio_base64 = base64.b64encode(audio_data).decode('utf-8')
+            except Exception as e:
+                logger.error(f"Audio encoding error: {str(e)}")
+                audio_base64 = ""
+
+            return {
+                'translation': translation['translation'],
+                'translationDetails': translation,
+                'audio': audio_base64,
+                'original_text': transcription['text']
+            }
+
+        except Exception as e:
+            logger.error(f"Voice translation error: {str(e)}")
+            raise
